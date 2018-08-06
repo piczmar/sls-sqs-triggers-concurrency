@@ -30,7 +30,6 @@ functions:
               - MyQueue
               - Arn
       - batchSize: 1 # default and max is 10
-    reservedConcurrency: 5
 
 resources:
   Resources:
