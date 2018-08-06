@@ -1,0 +1,46 @@
+# serverless.yml
+
+service: sqs-lambda-scaling-demo
+
+provider:
+  name: aws
+  runtime: nodejs6.10
+  profile: sls
+  region: us-east-1
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "sqs:SendMessage"
+        - "sqs:GetQueueUrl"
+      Resource: "arn:aws:sqs:${self:provider.region}:811338114639:MyQueue"
+    - Effect: "Allow"
+      Action:
+        - "sqs:ListQueues"
+      Resource: "arn:aws:sqs:${self:provider.region}:811338114639:*"
+
+
+functions:
+  receiver:
+    handler: receiver.handler
+    timeout: 30 # timeout in sec, default is 6
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - MyQueue
+              - Arn
+      - batchSize: 1 # default and max is 10
+    reservedConcurrency: 5
+
+resources:
+  Resources:
+    MyQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "MyQueue"
+        VisibilityTimeout: 30 # 30 sec.
+        MessageRetentionPeriod: 60 # 60 sec.
+
+
+# export QUEUE_URL=`aws sqs get-queue-url --queue-name MyQueue --query 'QueueUrl' --output text --profile=sls`
+# aws sqs send-message --queue-url ${QUEUE_URL} --message-body "test" --profile=sls
